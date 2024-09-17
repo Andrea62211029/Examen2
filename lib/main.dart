@@ -1,125 +1,232 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
-void main() {
-  runApp(const MyApp());
+// Modelo Ticket
+class Ticket {
+  final String id;
+  final String flightNumber;
+  final String airline;
+  final String passengerInfo;
+  final String origin;
+  final String destination;
+  final String seat;
+  final String classType;
+
+  Ticket({
+    required this.id,
+    required this.flightNumber,
+    required this.airline,
+    required this.passengerInfo,
+    required this.origin,
+    required this.destination,
+    required this.seat,
+    required this.classType,
+  });
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+// Provider de Tickets
+class TicketProvider with ChangeNotifier {
+  List<Ticket> _tickets = [];
 
-  // This widget is the root of your application.
+  List<Ticket> get tickets => _tickets;
+
+  void addTicket(Ticket ticket) {
+    _tickets.add(ticket);
+    notifyListeners();
+  }
+
+  void updateTicket(Ticket updatedTicket) {
+    final index = _tickets.indexWhere((t) => t.id == updatedTicket.id);
+    if (index != -1) {
+      _tickets[index] = updatedTicket;
+      notifyListeners();
+    }
+  }
+
+  void deleteTicket(String id) {
+    _tickets.removeWhere((t) => t.id == id);
+    notifyListeners();
+  }
+}
+
+// Pantalla Principal
+class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    final ticketProvider = Provider.of<TicketProvider>(context);
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Tickets')),
+      body: ListView.builder(
+        itemCount: ticketProvider.tickets.length,
+        itemBuilder: (context, index) {
+          final ticket = ticketProvider.tickets[index];
+          return ListTile(
+            title: Text(ticket.flightNumber),
+            subtitle: Text('${ticket.origin} to ${ticket.destination}'),
+            trailing: IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: () {
+                ticketProvider.deleteTicket(ticket.id);
+              },
+            ),
+            onTap: () => context.go('/ticket/${ticket.id}'),
+          );
+        },
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.go('/ticket/new'),
+        child: Icon(Icons.add),
+      ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+// Pantalla de Ticket
+class TicketScreen extends StatefulWidget {
+  final String? id;
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  TicketScreen({this.id});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _TicketScreenState createState() => _TicketScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _TicketScreenState extends State<TicketScreen> {
+  final _flightNumberController = TextEditingController();
+  final _airlineController = TextEditingController();
+  final _passengerInfoController = TextEditingController();
+  final _originController = TextEditingController();
+  final _destinationController = TextEditingController();
+  final _seatController = TextEditingController();
+  final _classTypeController = TextEditingController();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    if (widget.id != null) {
+      final ticket = Provider.of<TicketProvider>(context, listen: false)
+          .tickets
+          .firstWhere((t) => t.id == widget.id);
+      _flightNumberController.text = ticket.flightNumber;
+      _airlineController.text = ticket.airline;
+      _passengerInfoController.text = ticket.passengerInfo;
+      _originController.text = ticket.origin;
+      _destinationController.text = ticket.destination;
+      _seatController.text = ticket.seat;
+      _classTypeController.text = ticket.classType;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final ticketProvider = Provider.of<TicketProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+        title: Text(widget.id == null ? 'New Ticket' : 'Edit Ticket'),
+        actions: [
+          if (widget.id != null)
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: () {
+                ticketProvider.deleteTicket(widget.id!);
+                context.go('/');
+              },
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _flightNumberController,
+              decoration: InputDecoration(labelText: 'Flight Number'),
+            ),
+            TextField(
+              controller: _airlineController,
+              decoration: InputDecoration(labelText: 'Airline'),
+            ),
+            TextField(
+              controller: _passengerInfoController,
+              decoration: InputDecoration(labelText: 'Passenger Info'),
+            ),
+            TextField(
+              controller: _originController,
+              decoration: InputDecoration(labelText: 'Origin'),
+            ),
+            TextField(
+              controller: _destinationController,
+              decoration: InputDecoration(labelText: 'Destination'),
+            ),
+            TextField(
+              controller: _seatController,
+              decoration: InputDecoration(labelText: 'Seat'),
+            ),
+            TextField(
+              controller: _classTypeController,
+              decoration: InputDecoration(labelText: 'Class'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                final ticket = Ticket(
+                  id: widget.id ?? DateTime.now().toString(),
+                  flightNumber: _flightNumberController.text,
+                  airline: _airlineController.text,
+                  passengerInfo: _passengerInfoController.text,
+                  origin: _originController.text,
+                  destination: _destinationController.text,
+                  seat: _seatController.text,
+                  classType: _classTypeController.text,
+                );
+                if (widget.id == null) {
+                  ticketProvider.addTicket(ticket);
+                } else {
+                  ticketProvider.updateTicket(ticket);
+                }
+                context.go('/');
+              },
+              child: Text(widget.id == null ? 'Add Ticket' : 'Update Ticket'),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+}
+
+// Configuración de Rutas
+final GoRouter router = GoRouter(
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => HomeScreen(),
+    ),
+    GoRoute(
+      path: '/ticket/:id',
+      builder: (context, state) {
+        final id = state.params['id'];
+        return TicketScreen(id: id);
+      },
+    ),
+    GoRoute(
+      path: '/ticket/new',
+      builder: (context, state) => TicketScreen(),
+    ),
+  ],
+);
+
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => TicketProvider(),
+      child: MaterialApp.router(
+        routerDelegate: router.routerDelegate,
+        routeInformationParser: router.routeInformationParser,
+      ),
+    ),
+  );
 }
