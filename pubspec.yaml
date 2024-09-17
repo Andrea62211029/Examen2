@@ -1,7 +1,7 @@
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: latest_version
-  cloud_firestore: latest_version
-  provider: latest_version
-  go_router: latest_version
+  firebase_core: ^2.15.0
+  cloud_firestore: ^4.0.3
+  provider: ^6.1.0
+  go_router: ^6.0.0
